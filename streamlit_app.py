@@ -12,15 +12,18 @@ import os
 import joblib
 import numpy as np
 import streamlit as st
+import streamlit_antd_components as sac
 
 # ---------------------------------------------------------------------------
-# Configuration
+# Configuration (CHEMIN DYNAMIQUE VERS model_artifacts)
 # ---------------------------------------------------------------------------
 
-DOSSIER_ARTEFACTS = os.environ.get("DOSSIER_ARTEFACTS", "../model_artifacts")
+# Le dossier "model_artifacts" doit être DANS le même dossier que ce script.
+# Peu importe si vous êtes sur Windows, Linux ou Streamlit Cloud.
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DOSSIER_ARTEFACTS = os.path.join(BASE_DIR, "model_artifacts")
 
 # Plages plausibles observées dans le dataset d'entraînement (Crop_recommendation.csv).
-# Utilisées uniquement pour avertir en cas de saisie hors distribution.
 PLAGES_ENTRAINEMENT = {
     "N": (0, 140),
     "P": (5, 145),
@@ -51,7 +54,15 @@ VALEURS_DEFAUT = {f: round((lo + hi) / 2, 1) for f, (lo, hi) in PLAGES_ENTRAINEM
 
 @st.cache_resource
 def charger_artefacts():
+    # Construction des chemins vers chaque fichier dans model_artifacts
     chemin = lambda nom: os.path.join(DOSSIER_ARTEFACTS, nom)
+
+    # Vérification que le dossier existe
+    if not os.path.exists(DOSSIER_ARTEFACTS):
+        raise FileNotFoundError(
+            f"Le dossier '{DOSSIER_ARTEFACTS}' est introuvable. "
+            f"Assurez-vous que le dossier 'model_artifacts' est bien à côté de votre script."
+        )
 
     modele = joblib.load(chemin("modele_final.joblib"))
     encodeur_cible = joblib.load(chemin("encodeur_cible.joblib"))
@@ -99,9 +110,19 @@ def predire(modele, scaler, encodeur_cible, features, valeurs: dict):
 # Interface
 # ---------------------------------------------------------------------------
 
-st.set_page_config(page_title="Recommandation de culture", page_icon="🌾", layout="centered")
-st.title("🌾 Recommandation de culture agricole")
-st.caption("Projet 3 — LABO ACADEMY | Saisis les caractéristiques du sol et du climat de la parcelle.")
+st.set_page_config(
+    page_title="Recommandation de culture",
+    page_icon="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f33e.svg",
+    layout="centered",
+)
+
+# Titre avec icône Material
+sac.alert(
+    label="Recommandation de culture agricole",
+    description="Saisis les caractéristiques du sol et du climat de la parcelle.",
+    color="green",
+    icon="forest-green"
+)
 
 try:
     MODELE, SCALER, ENCODEUR_CIBLE, FEATURES = charger_artefacts()
@@ -109,19 +130,22 @@ except Exception as e:
     st.error(
         f"Impossible de charger les artefacts depuis `{os.path.abspath(DOSSIER_ARTEFACTS)}`.\n\n"
         f"Erreur : {e}\n\n"
-        f"Vérifie le chemin (variable d'environnement `DOSSIER_ARTEFACTS`) ou que "
-        f"`modele_final.joblib`, `encodeur_cible.joblib` et `noms_features.joblib` "
-        f"existent bien dans ce dossier."
+        f"Vérifiez que les fichiers `modele_final.joblib`, `encodeur_cible.joblib` et "
+        f"`noms_features.joblib` existent bien dans le dossier `model_artifacts` à côté de ce script."
     )
     st.stop()
 
 with st.sidebar:
-    st.subheader("Informations sur le modèle")
+    sac.alert(label="Informations sur le modèle", color="gray", icon="info")
     st.write(f"**{len(ENCODEUR_CIBLE.classes_)} cultures possibles**")
     st.write(", ".join(sorted(ENCODEUR_CIBLE.classes_)))
     st.write(f"**Scaler appliqué :** {'Oui' if SCALER is not None else 'Non'}")
 
-st.subheader("Caractéristiques de la parcelle")
+sac.alert(
+    label="Caractéristiques de la parcelle",
+    color="blue",
+    icon="science"
+)
 
 col1, col2 = st.columns(2)
 valeurs = {}
@@ -135,7 +159,7 @@ for i, f in enumerate(FEATURES):
         format="%.2f",
     )
 
-if st.button("Obtenir la recommandation", type="primary"):
+if st.button("Obtenir la recommandation", icon=":material/agriculture:", type="primary"):
     try:
         culture, avertissements, top3 = predire(MODELE, SCALER, ENCODEUR_CIBLE, FEATURES, valeurs)
 
