@@ -1,6 +1,5 @@
 """
 Application Streamlit — Système de recommandation de culture agricole
-Projet 3 (LABO ACADEMY)
 
 Lancement :
     streamlit run streamlit_app.py
@@ -18,7 +17,7 @@ import streamlit as st
 # Configuration
 # ---------------------------------------------------------------------------
 
-DOSSIER_ARTEFACTS = os.environ.get("DOSSIER_ARTEFACTS", "C:/Users/solution info/Desktop/labo-ml/projet3_recommandation/model_artifacts")
+DOSSIER_ARTEFACTS = os.environ.get("DOSSIER_ARTEFACTS", "../model_artifacts")
 
 # Plages plausibles observées dans le dataset d'entraînement (Crop_recommendation.csv).
 # Utilisées uniquement pour avertir en cas de saisie hors distribution.
